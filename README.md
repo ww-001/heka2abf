@@ -1,140 +1,356 @@
 # heka2abf
 
-> 把 HEKA PatchMaster 的 `.dat` 文件转换为 **ABF2**（Axon Binary Format 2）文件的
-> Python 工具（命令行 + 图形界面），转换结果可由 Clampfit / pyABF 直接打开。
+> 🇨🇳 **中文版说明见下方「中文简介」段** / For Chinese users, see "中文简介" section below.
 
-**Latest:** v0.2.0 · **License:** MIT · **Platform:** Windows 10/11 (primary) · Python 3.9+ · **Stack:** Python + numpy + pyabf + tkinter
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/github/actions/status/ww-001/heka2abf/tests.yml?branch=main&label=tests)](../../actions)
+[![GitHub release](https://img.shields.io/github/v/release/ww-001/heka2abf?include_prereleases)](../../releases)
 
-## 特性
+**Latest stable:** v0.2.0 · **First release:** v0.2.0 · **Platform:** Windows 10/11 (primary) · macOS / Linux (CLI) · **Stack:** Python 3.9+ + numpy + pyabf (tests) + tkinter
 
-* 读取：基于 [campagnola/heka_reader](https://github.com/campagnola/heka_reader)
-  解析 HEKA .dat 的树形结构（Group → Series → Sweep → Trace）。
-* 写入：**自研的 ABF2 写入器**（不依赖任何 ABF 写入库 —— pyABF 只支持写 ABF1）。
-  按真实 Clampfit 文件的头部布局实现：FB 文件段、PIL/ADC/STR/DATA/SIC 分节、
-  SSCH 字符串区；存储为 **int16 + 每通道缩放系数**（与 pClamp 原生文件一致），
-  数值已按 HEKA 的 DataScaler/ZeroData 换算成物理单位。
-* 单位：默认把电压 **V → mV**、电流 **A → pA**（信号值同步换算），Clampfit 中
-  直接显示 mV / pA。
-* 组织：输出按源文件分文件夹 —— `<out>/<dat文件主名>/<...>.abf`，同一 .dat 的
-  结果都在同名文件夹里。
-* 多通道：同一 HEKA Series 内各 ADC 通道交织保存在一个 ABF 文件（通道 = trace 的
-  ADC 通道号；sweep = HEKA sweep）；也可用 `--one-file-per-channel` 按通道拆分文件。
-* 采集模式：多 sweep 系列 → **episodic（mode 5）**；单 sweep 系列/连续记录 →
-  **gap-free（mode 3）**——与真实 Clampfit 文件一致。
-* **变长 sweep**：HEKA 常见的"最后一个 sweep 提前结束"（例如记录被中断）由 ABF2
-  的 SIC 同步数组原生支持，Clampfit / pyABF 都能正确逐 sweep 读取。
-* **起始时间**：每个 sweep 的起始时刻（HEKA `SweepRecord.Time`）写入 SIC，转换后
-  Clampfit 中 sweep 的绝对时间与 PatchMaster 一致。
+A Python tool (CLI + tkinter GUI) that converts HEKA PatchMaster `.dat` files
+to **ABF2** (Axon Binary Format 2), the format readable by Molecular Devices
+Clampfit and the [swharden/pyABF](https://github.com/swharden/pyABF) library.
 
-## 安装
+The project includes a **self-contained ABF2 writer** — no external ABF
+write dependency is required (pyABF only supports writing ABF1, which loses
+information). The writer mirrors real Clampfit file layout: FB file section,
+PIL / ADC / STR / DATA / SIC sections, SSCH string area; **int16 + per-channel
+scale factors** storage (matching pClamp-native files); values are converted
+to physical units via HEKA's `DataScaler` / `ZeroData`.
 
-```powershell
+---
+
+## ✨ Features
+
+| Category | Capability |
+|---|---|
+| **HEKA reader** | Parses HEKA `.dat` tree (Group → Series → Sweep → Trace) via the vendored [campagnola/heka_reader](https://github.com/campagnola/heka_reader) module. |
+| **ABF2 writer** | Self-contained; mirrors real Clampfit layout (FB / PIL / ADC / STR / DATA / SIC + SSCH strings); int16 + per-channel scale. |
+| **Multi-channel** | ADC channels within a series are interleaved into one ABF file (channel = trace ADC number, sweep = HEKA sweep). Use `--one-file-per-channel` to split per ADC. |
+| **Unit normalization** | V → mV, A → pA by default (signal values scaled in lockstep); configurable in `heka2abf/convert.py`. |
+| **Acquisition mode auto** | Multi-sweep series → episodic (mode 5); single-sweep / continuous → gap-free (mode 3). Override with `--mode episodic` / `--mode gapfree`. |
+| **Variable-length sweeps** | HEKA's "last-sweep-cut-short" pattern (interrupted recordings) is handled natively via the ABF2 SIC synch array — Clampfit and pyABF read each sweep correctly. |
+| **Sweep start times** | HEKA `SweepRecord.Time` written to SIC; absolute sweep timing in Clampfit matches PatchMaster. |
+| **Organization** | Output goes to `<out>/<dat file stem>/<...>.abf` so each `.dat`'s results stay together. |
+| **GUI** | Tkinter interface (no third-party GUI deps) — add files / folders, output location, mode, real-time log. |
+| **CLI** | `heka2abf data.dat -o out/` plus `--inspect` for structure dump. |
+
+---
+
+## 🚀 Quick Start
+
+### From PyPI (once published)
+
+```bash
+pip install heka2abf
+# heka_reader.py is NOT on PyPI (vendored, no upstream license);
+# install.bat / install.sh copies it into site-packages automatically.
+```
+
+### From source (development)
+
+```bash
+git clone https://github.com/ww-001/heka2abf.git
+cd heka2abf
 python -m venv .venv
+# Linux / macOS
+source .venv/bin/activate
+pip install numpy pyabf
+cp third_party/heka_reader.py .venv/lib/python*/site-packages/
+# Windows (PowerShell)
 .\.venv\Scripts\pip install numpy pyabf
-# heka_reader 没有 PyPI 包（且无 setup.py），手动放入 site-packages：
-#   从 https://github.com/campagnola/heka_reader/archive/refs/heads/master.zip
-#   解压后把 heka_reader.py 复制到 .\.venv\Lib\site-packages\
+copy /y third_party\heka_reader.py .venv\Lib\site-packages\heka_reader.py
 ```
 
-## 使用说明
+### GUI launch
 
-### 图形界面（推荐）
+| OS | Command |
+|---|---|
+| Windows | Double-click `run_gui.bat` |
+| macOS / Linux | `python -m heka2abf.gui` |
 
-```powershell
-run_gui.bat        # 或 python heka2abf/gui.py
+### CLI conversion
+
+```bash
+# Inspect a .dat bundle (no conversion)
+heka2abf data.dat --inspect
+
+# Convert (output to out/<dat-stem>/<...>.abf)
+heka2abf data.dat -o out/
+
+# One ABF per ADC channel
+heka2abf data.dat -o out/ --one-file-per-channel
+
+# Force acquisition mode
+heka2abf data.dat -o out/ --mode episodic
+heka2abf data.dat -o out/ --mode gapfree
 ```
 
-1. **添加文件**：点"添加文件…"选单个 .dat，或"添加文件夹…"选整个目录（自动递归找出所有 .dat）；
-2. **导出位置**：默认在每个 .dat 同级目录下新建"<dat文件名>"文件夹存放结果；
-   也可以选择"自定义导出根目录"；
-3. 按需调整采集模式（auto / episodic / gapfree）、是否按通道拆分；
-4. 点**导出**，日志区实时显示进度，完成后用 Clampfit 打开生成的 .abf。
+---
 
-### 命令行
+## 📦 Sharing with Colleagues (Windows-only pack-and-go)
+
+The repo ships with one-click installers for non-Python-expert users:
+
+1. Copy the whole `heka2abf` folder to the colleague (must include
+   `install.bat`, `run_gui.bat`, `third_party/heka_reader.py`);
+2. The colleague's machine needs **Python 3.9+** (from python.org, with
+   "Add Python to PATH" ticked);
+3. They double-click `install.bat` — creates an isolated `.venv`, installs
+   numpy, copies the HEKA parser. One-time setup;
+4. Then double-click `run_gui.bat` to launch the GUI — no further setup.
+
+Notes:
+
+* Conversion only needs **numpy + heka_reader** (installed by `install.bat`).
+  `pyabf` is only used by the bundled tests and is **not** required.
+* Always launch with `run_gui.bat` (it uses the bundled venv Python and hides
+  the console window). Don't launch `python heka2abf/gui.py` with the system
+  Python — it won't find dependencies.
+* For fully-no-install delivery, a PyInstaller-bundled `.exe` is the next step.
+
+---
+
+## 🗂️ HEKA → ABF2 Mapping
+
+| HEKA | ABF2 |
+|---|---|
+| Series | One file |
+| ADC channel (trace) | ABF channel (interleaved) |
+| Sweep | ABF sweep (episodic mode, mode 5) |
+| `XInterval` (seconds) | `PIL.fADCSequenceInterval` (microseconds) |
+| `YUnit` / trace `Label` | ADC channel unit / name (STR string index) |
+
+---
+
+## ✅ Verification
+
+`tests/test_abf2writer.py` reads the writer's output back via pyABF:
+
+* **Synthetic round-trip** — channel count / sweep count / sample rate /
+  names + units / waveform all match exactly.
+* **Real-Clampfit-file emulation** — `reference/model_vc_ramp.abf` (50 sweeps)
+  is rewritten and re-read; the max absolute physical-value difference stays
+  within int16 quantization.
+* `tests/test_real_dat.py` (gated by the `real_dat` marker, **skipped on CI**) —
+  end-to-end comparison on real HEKA `.dat` files including variable-length
+  sweeps, two-channel IV curves, 30+ sweep CC injection, membrane tests.
+  **Max absolute error = 0** on every sample.
+
+Run locally:
+
+```bash
+# synthetic (always runs)
+pytest tests/test_abf2writer.py -v
+
+# real-file round-trip (requires your own .dat files; skipped on CI)
+pytest tests/test_real_dat.py -v -m real_dat -- path/to/your.dat [path/to/...]
+```
+
+---
+
+## ⚠️ Known Limitations
+
+* HEKA files written with PatchMaster's optional lossy compression (min/max
+  pairs) are read back as raw min/max values by `heka_reader`. Standard
+  patch-clamp recordings are uncompressed, so this doesn't affect typical use.
+* Two SSCH-string header offset fields (bytes 12 / 16 within the entry) are
+  generated by the heuristic of real Clampfit files (44 + first-string length /
+  44 + total length); pyABF does not read them, and Clampfit's string window
+  ignores them in practice.
+
+---
+
+## 🧰 Reference Data
+
+* `reference/*.abf` — real Clampfit ABF2 files from the
+  [swharden/pyABF](https://github.com/swharden/pyABF) repo (MIT licensed);
+  used as format references.
+* `tools/abf2_dump.py` — hex-dump a real ABF2 file (FB section, section
+  index, PIL / ADC / STR / DATA / SIC fields). Use this to study what
+  Clampfit writes and to cross-check the files produced by heka2abf.
+* `third_party/heka_reader.py` — Luke Campagnola's HEKA `.dat` parser,
+  vendored as a single-file module (upstream has no PyPI release and no
+  license file; `install.bat` / `install.sh` copy it into site-packages).
+
+---
+
+## 📝 Citation
+
+If you use heka2abf in your research, please cite:
+
+```bibtex
+@software{heka2abf,
+  author       = {Wang, Wenting},
+  title        = {heka2abf: HEKA PatchMaster .dat to ABF2 file converter},
+  version      = {0.2.0},
+  year         = {2026},
+  url          = {https://github.com/ww-001/heka2abf},
+  note         = {Self-contained ABF2 writer (int16 + per-channel scale), multi-channel interleaved, episodic/gap-free auto mode, variable-length sweep handling via SIC.}
+}
+```
+
+---
+
+## 📜 License
+
+[MIT](LICENSE) — Copyright © 2026 Wenting Wang. See [LICENSE](LICENSE) for the
+full text.
+
+---
+
+## 🛠️ Development
+
+```bash
+git clone https://github.com/ww-001/heka2abf.git
+cd heka2abf
+python -m venv .venv && source .venv/bin/activate   # or .venv\Scripts\activate on Windows
+pip install -e ".[dev]"                              # editable install with test deps
+pytest tests/test_abf2writer.py -v                   # synthetic-data tests
+```
+
+For contributors:
+
+* Run `pytest tests/test_abf2writer.py -v` before sending a PR — it must
+  stay green across Python 3.9–3.12 (CI matrix).
+* New code must round-trip cleanly under int16 quantization (max abs error
+  ≤ `peak * 1e-4`).
+* Update `CHANGELOG.md` under a new section heading `[X.Y.Z] - YYYY-MM-DD`.
+
+---
+
+## 中文简介
+
+**heka2abf** 是把 HEKA PatchMaster 的 `.dat` 文件转换成 **ABF2**
+（Axon Binary Format 2）文件的 Python 工具（命令行 + 图形界面），转换结果
+可直接被 Molecular Devices Clampfit 以及 [swharden/pyABF](https://github.com/swharden/pyABF) 打开分析。
+
+项目自带**完整的 ABF2 写入器** —— 不依赖任何 ABF 写入库（pyABF 只能写 ABF1，
+会丢失信息）。写入器按真实 Clampfit 文件布局实现：FB 文件段、PIL / ADC /
+STR / DATA / SIC 分节、SSCH 字符串区；采用 **int16 + 每通道缩放系数** 存储
+（与 pClamp 原生文件一致），数值已按 HEKA 的 `DataScaler` / `ZeroData` 换算
+成物理单位。
+
+### 主要功能
+
+* **HEKA 解析**：基于 vendored 的 [campagnola/heka_reader](https://github.com/campagnola/heka_reader) 模块解析 HEKA `.dat` 的树形结构（Group → Series → Sweep → Trace）。
+* **ABF2 写入器**：自研，不依赖外部库；按真实 Clampfit 头部布局（FB / PIL / ADC / STR / DATA / SIC + SSCH 字符串）实现；int16 + 每通道缩放系数。
+* **多通道交织**：同一 HEKA Series 内的 ADC 通道交织保存到一个 ABF 文件（通道 = trace ADC 号，sweep = HEKA sweep）；可用 `--one-file-per-channel` 按通道拆分。
+* **单位换算**：默认 V → mV、A → pA（信号值同步缩放）；可在 `heka2abf/convert.py` 中配置。
+* **采集模式自动**：多 sweep 系列 → episodic（mode 5）；单 sweep / 连续记录 → gap-free（mode 3）。可用 `--mode episodic` / `--mode gapfree` 强制。
+* **变长 sweep 处理**：HEKA 常见的"最后 sweep 提前结束"（记录中断）通过 ABF2 SIC 同步数组原生支持 —— Clampfit / pyABF 能正确逐 sweep 读取。
+* **sweep 起始时间**：HEKA `SweepRecord.Time` 写入 SIC；Clampfit 中 sweep 的绝对时间与 PatchMaster 一致。
+* **输出组织**：结果保存到 `<输出>/<dat 文件主名>/<...>.abf`，同一 `.dat` 的结果都在同名文件夹里。
+* **图形界面**：Tkinter 实现（无第三方 GUI 依赖）—— 添加文件 / 文件夹、输出位置、模式选择、实时日志。
+* **命令行**：`heka2abf data.dat -o out/`，支持 `--inspect` 查看结构。
+
+### 快速上手
+
+```bash
+# 源码运行（开发机，需 Python 3.9+）
+git clone https://github.com/ww-001/heka2abf.git
+cd heka2abf
+python -m venv .venv
+# Linux / macOS
+source .venv/bin/activate
+pip install numpy pyabf
+cp third_party/heka_reader.py .venv/lib/python*/site-packages/
+# Windows (PowerShell)
+.\.venv\Scripts\pip install numpy pyabf
+copy /y third_party\heka_reader.py .venv\Lib\site-packages\heka_reader.py
+```
+
+| 操作系统 | 启动 GUI |
+|---|---|
+| Windows | 双击 `run_gui.bat` |
+| macOS / Linux | `python -m heka2abf.gui` |
+
+### 命令行转换
 
 ```powershell
 # 查看 .dat 结构（不转换）
-.\.venv\Scripts\python -m heka2abf.cli data.dat --inspect
+heka2abf data.dat --inspect
 
-# 转换（结果在 out/<dat文件名>/ 下）
-.\.venv\Scripts\python -m heka2abf.cli data.dat -o out/
+# 转换（结果在 out/<dat文件主名>/ 下）
+heka2abf data.dat -o out/
 
-# 按通道拆分（一个通道一个文件）
-.\.venv\Scripts\python -m heka2abf.cli data.dat -o out/ --one-file-per-channel
+# 按通道拆分
+heka2abf data.dat -o out/ --one-file-per-channel
 
-# 强制模式（默认 auto：单 sweep 系列→gap-free，多 sweep 系列→episodic）
-.\.venv\Scripts\python -m heka2abf.cli data.dat -o out/ --mode episodic
-.\.venv\Scripts\python -m heka2abf.cli data.dat -o out/ --mode gapfree
+# 强制模式
+heka2abf data.dat -o out/ --mode episodic
+heka2abf data.dat -o out/ --mode gapfree
 ```
 
-## 发给同事使用
+### 发给同事使用（Windows 一键装机包）
 
-软件目录已自带一键安装脚本，同事用法：
+仓库自带一键安装脚本：
 
-1. 把整个 `heka2abf` 文件夹复制给同事（包含 `install.bat`、`run_gui.bat`、
-   `third_party\heka_reader.py` 等）；
-2. 同事电脑需装有 **Python 3.9+**（python.org 安装时勾选 "Add Python to PATH"）；
-3. 双击 `install.bat`：自动创建独立的 `.venv` 环境，安装 numpy 并复制 HEKA
-   解析库（一次即可）；
-4. 之后双击 `run_gui.bat` 打开图形界面，无需再配置任何东西。
+1. 把整个 `heka2abf` 文件夹复制给同事（包含 `install.bat`、`run_gui.bat`、`third_party/heka_reader.py` 等）；
+2. 同事电脑需装 **Python 3.9+**（python.org 安装时勾选 "Add Python to PATH"）；
+3. 双击 `install.bat`：自动创建独立的 `.venv` 环境，安装 numpy 并复制 HEKA 解析库（一次性）；
+4. 之后双击 `run_gui.bat` 打开图形界面，无需再配置。
 
 注意：
 
-* 转换功能只需要 **numpy + heka_reader**（install.bat 自动装好）；pyabf 仅用于
-  自带测试，不需要安装；
-* 一定要用 `run_gui.bat` 启动（它使用自带环境的 Python，且无控制台窗口）；
-  不要直接 `python heka2abf/gui.py` 用系统 Python 跑（会缺依赖）；
-* 若同事电脑不方便装 Python，下一步可以打包成免安装 exe（PyInstaller），
-  或者把装好环境的整个文件夹连同 `.venv` 一起拷过去直接用。
+* 转换功能只需要 **numpy + heka_reader**（`install.bat` 自动装好）。`pyabf` 仅用于自带测试，**不需要**安装。
+* 一定要用 `run_gui.bat` 启动（自带 venv Python，无控制台窗口）。不要直接用系统 Python 跑 `python heka2abf/gui.py` —— 缺依赖。
+* 若要彻底免安装，下一步可用 PyInstaller 打包成 `.exe`。
 
-### 常见问题
-
-* **某个系列最后的 sweep 提前结束（记录中断）**：转换时会自动把短 sweep 尾端补到
-  标准长度（保持最后一值），保证 Clampfit 正常显示；
-* **单 sweep 的刺激实验文件希望按 episodic 显示**：加 `--mode episodic`；
-* **单位**：默认电压 V→mV、电流 A→pA（数值同步换算）；如需保留原始单位，改
-  `heka2abf/convert.py` 中 `_normalize_unit()` 即可。
-
-## 结构映射
+### 结构映射
 
 | HEKA | ABF2 |
 |---|---|
 | Series | 一个文件 |
-| ADC 通道（trace） | ABF 通道（交织存储） |
-| Sweep | ABF sweep（episodic 模式，mode 5） |
-| XInterval（秒） | PIL.fADCSequenceInterval（微秒） |
-| YUnit / trace Label | ADC 通道单位 / 名称（STR 字符串索引） |
+| ADC 通道（trace） | ABF 通道（交织） |
+| Sweep | ABF sweep（episodic 模式，mode 5）|
+| `XInterval`（秒） | `PIL.fADCSequenceInterval`（微秒）|
+| `YUnit` / trace `Label` | ADC 通道单位 / 名称（STR 字符串索引）|
 
-## 验证
+### 验证
 
 `tests/test_abf2writer.py` 用 pyABF 回读写入结果：
-* 合成数据往返：通道数 / sweep 数 / 采样率 / 名称单位 / 波形完全一致；
-* 用真实 Clampfit ABF2（`reference/model_vc_ramp.abf`）的 50 个 sweep 数据重写后
-  回读，与原物理值**逐点零误差**；
-* `tests/test_real_dat.py`：对真实 HEKA .dat（4 个文件、含变长 sweep、双通道
-  IV 曲线、30+ sweep 的 CC 注入、膜测试等）做"HEKA 原始值 → 写入 → pyABF 回读"
-  全量逐点对比，**最大绝对误差 = 0**。
 
-## 已知限制
+* **合成数据往返**：通道数 / sweep 数 / 采样率 / 名称单位 / 波形完全一致；
+* **真实 Clampfit 文件回放**：`reference/model_vc_ramp.abf`（50 sweeps）的物理值重写后回读，差异落在 int16 量化误差内；
+* `tests/test_real_dat.py`（标 `real_dat` 标记，**CI 上默认跳过**）：用自己的真实 HEKA `.dat`（变长 sweep、双通道 IV 曲线、30+ sweep CC 注入、膜测试等）做端到端逐点对比，**最大绝对误差 = 0**。
 
-* heka_reader 直接读取存储样本数组，PatchMaster 开启可选有损压缩（min/max 成对
-  存储）的文件会原样读出压缩值；标准膜片钳记录通常不压缩。
-* SSCH 字符串头中两个偏移字段（条目内第 12/16 字节）按真实文件的规律生成
-  （44+首串长度 / 44+总长）；pyABF 完全不读它们。若 Clampfit 的字符串窗显示异常
-  属于这类装饰性字段问题，不影响数据读取。
+本地运行：
 
-## 测试与参考数据
+```bash
+# 合成测试（始终跑）
+pytest tests/test_abf2writer.py -v
 
-* `tests/test_abf2writer.py`：合成数据 + `reference/` 里真实 Clampfit ABF2
-  文件的读取回放验证，无需真实 HEKA 数据；
-* `tests/test_real_dat.py`：用自己的真实 HEKA .dat 做端到端逐点对比：
-  `python tests/test_real_dat.py <你的.dat> …`（可传多个文件）；
-* `reference/*.abf` 为 pyABF 仓库的测试数据（
-  [swharden/pyABF](https://github.com/swharden/pyABF)，MIT 许可），仅作格式对照。
+# 真实文件回放（需要你自己的 .dat；CI 上跳过）
+pytest tests/test_real_dat.py -v -m real_dat -- path/to/your.dat [path/to/...]
+```
 
-## 参考
+### 已知限制
 
-* ABF2 结构依据 pyABF 源码（[swharden/pyABF](https://github.com/swharden/pyABF)）
-  与真实 Clampfit 文件（`reference/`, 可用 `tools/abf2_dump.py` 解剖）。
-* 同类项目 [junzhanj/HEKADatConverter](https://github.com/junzhanj/HEKADatConverter)
-  （写 ABF1，本工具在数据保真与 ABF2 上更强）。
+* HEKA 文件若开启 PatchMaster 的可选有损压缩（min/max 成对存储），`heka_reader` 会原样读出压缩值；标准膜片钳记录通常不压缩。
+* SSCH 字符串头中两个偏移字段（条目内第 12/16 字节）按真实 Clampfit 文件规律生成（44 + 首串长度 / 44 + 总长）；pyABF 完全不读它们，Clampfit 字符串窗在实践中忽略。
+
+### 参考数据
+
+* `reference/*.abf` —— 真实 Clampfit ABF2 文件，来自 [swharden/pyABF](https://github.com/swharden/pyABF)（MIT 许可），仅作格式对照；
+* `tools/abf2_dump.py` —— hex 转储一个真实 ABF2 文件（FB / PIL / ADC / STR / DATA / SIC 全字段），用于研究 Clampfit 写出来的结构；
+* `third_party/heka_reader.py` —— Luke Campagnola 的 HEKA `.dat` 解析模块，vendored 单文件（原仓库无 PyPI 包，无许可证）；`install.bat` / `install.sh` 会复制到 `site-packages`。
+
+### 引用本工具
+
+```bibtex
+@software{heka2abf,
+  author       = {Wang, Wenting},
+  title        = {heka2abf: HEKA PatchMaster .dat 到 ABF2 文件转换器},
+  version      = {0.2.0},
+  year         = {2026},
+  url          = {https://github.com/ww-001/heka2abf},
+  note         = {自研 ABF2 写入器（int16 + 每通道缩放），多通道交织，episodic/gap-free 自动模式，变长 sweep 通过 SIC 同步数组处理'}
+}
+```
+
+### License
+
+[MIT](LICENSE) — Copyright © 2026 Wenting Wang。完整条款见 [LICENSE](LICENSE)。

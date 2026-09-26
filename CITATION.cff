@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: >-
+  If you use heka2abf in your research, please cite it using the metadata
+  from this file.
+title: heka2abf
+abstract: >-
+  Convert HEKA PatchMaster .dat files to ABF2 (Axon Binary Format 2),
+  readable by Clampfit and pyABF. Self-contained ABF2 writer (no external
+  ABF write dependency); multi-channel interleave storage; per-channel
+  scale factors; V→mV and A→pA unit normalization; auto-detection of
+  episodic vs gap-free acquisition; variable-length sweep handling via
+  SIC synch array. Tkinter GUI and CLI included.
+authors:
+  - family-names: Wang
+    given-names: Wenting
+    affiliation: WWT Lab
+    email: wwt0657@fmmu.edu.cn
+    orcid: ""
+license: MIT
+license-url: https://github.com/ww-001/heka2abf/blob/main/LICENSE
+type: software
+keywords:
+  - heka
+  - patchmaster
+  - abf
+  - abf2
+  - clampfit
+  - patch-clamp
+  - electrophysiology
+  - neuroscience
+  - data-conversion
+  - python
+repository-code: https://github.com/ww-001/heka2abf
+url: https://github.com/ww-001/heka2abf
+date-released: 2026-09-26
+version: 0.2.0

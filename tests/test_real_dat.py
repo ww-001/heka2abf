@@ -13,17 +13,51 @@
 
 Run:  python tests/test_real_dat.py [dat1 dat2 ...]
 (defaults to the files in D:\\heka test\\test file)
+
+This test is marked ``real_dat`` and is SKIPPED by default on CI because it
+requires real HEKA .dat files at hard-coded paths.  To run it locally:
+
+    pytest tests/test_real_dat.py -v -m real_dat            # only this test
+    pytest tests/test_real_dat.py -v -m real_dat -- <files>  # pass files via argv
+
+Or via the legacy script entry-point (still works):
+
+    python tests/test_real_dat.py path/to/file1.dat path/to/file2.dat ...
 """
 
 import os
 import sys
 
 import numpy as np
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from heka2abf.abf2writer import write_abf2  # noqa: E402
 from heka2abf.reader import load_dat  # noqa: E402
+
+# This entire module is gated by the ``real_dat`` pytest marker so it is
+# excluded from ``pytest tests/`` on CI (see pyproject.toml [tool.pytest.ini_options]
+# addopts + the default-marker-skip convention below).  Run it locally with
+# ``pytest -m real_dat`` to exercise the end-to-end path.
+pytestmark = pytest.mark.real_dat
+
+
+def _candidate_default_dats():
+    folder = r"D:\heka test\test file"
+    if not os.path.isdir(folder):
+        return []
+    return [os.path.join(folder, f) for f in os.listdir(folder)
+            if f.lower().endswith(".dat")]
+
+
+def _dats_to_run(argv):
+    if argv:
+        # When pytest is driving us, sys.argv[1:] is the user-supplied CLI args
+        # (e.g. ``--``-separated test names); for the legacy script entry we
+        # accept file paths.
+        return [a for a in argv if a.lower().endswith(".dat")]
+    return _candidate_default_dats()
 
 
 def validate_one(dat_path, out_dir, max_series=3):
@@ -95,12 +129,11 @@ def validate_one(dat_path, out_dir, max_series=3):
 
 
 def main(argv):
-    if argv:
-        dats = argv
-    else:
-        folder = r"D:\heka test\test file"
-        dats = [os.path.join(folder, f) for f in os.listdir(folder)
-                if f.lower().endswith(".dat")]
+    dats = _dats_to_run(argv)
+    if not dats:
+        print("No .dat files to validate (set D:\\heka test\\test file or pass "
+              "paths on the command line).  Exiting 0 (nothing to fail).")
+        return 0
     out_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vout")
     os.makedirs(out_dir, exist_ok=True)
     total_bad = 0
