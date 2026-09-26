@@ -1,0 +1,33 @@
+include LICENSE
+include README.md
+include CHANGELOG.md
+include CITATION.cff
+include requirements.txt
+
+# Vendored third-party HEKA parser (single-file module).
+# Not declared in pyproject.toml [project].dependencies (see comment there)
+# because the upstream repository has no PyPI release and no license file.
+# Copy into site-packages at install time (install.bat / install.sh).
+include third_party/heka_reader.py
+
+# Reference ABF2 files (used by tests/test_abf2writer.py).
+include reference/*.abf
+
+# Windows installer / launcher scripts and Linux/macOS equivalents.
+include install.bat
+include run_gui.bat
+include run_gui_console.bat
+include install.sh
+include run_gui.sh
+
+# Recursive-include for any small data files we may add later.
+recursive-include docs *.md *.png *.svg 2>/dev/null
+
+# Exclude generated artifacts (defensive — .gitignore covers this, but
+# MANIFEST.in also controls what gets bundled into sdists).
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.egg-info
+global-exclude .venv
+global-exclude tests/*.abf
+global-exclude tests/vout

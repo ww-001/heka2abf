@@ -4,8 +4,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/github/actions/status/ww-001/heka2abf/tests.yml?branch=main&label=tests)](../../actions)
-[![GitHub release](https://img.shields.io/github/v/release/ww-001/heka2abf?include_prereleases)](../../releases)
+[![Tests](https://img.shields.io/github/actions/workflow/status/ww-001/heka2abf/test.yml?branch=main&label=tests)](../../actions/workflows/test.yml)
+[![GitHub release](https://img.shields.io/github/v/release/ww-001/heka2abf)](../../releases)
 
 **Latest stable:** v0.2.0 · **First release:** v0.2.0 · **Platform:** Windows 10/11 (primary) · macOS / Linux (CLI) · **Stack:** Python 3.9+ + numpy + pyabf (tests) + tkinter
 
