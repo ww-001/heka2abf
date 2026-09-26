@@ -1,14 +1,14 @@
-"""heka2abf 图形界面（tkinter，无第三方依赖）。
+"""heka2abf graphical user interface (tkinter, no third-party dependencies).
 
-启动方式：
-    python heka2abf/gui.py
-或双击 run_gui.bat
+Launch:
+    python -m heka2abf.gui
+or double-click run_gui.bat (Windows) / ./run_gui.sh (Linux / macOS).
 
-功能：
-  * 添加单个 .dat 文件或整个文件夹（递归搜索 *.dat）
-  * 导出位置：默认在 .dat 所在目录生成同名文件夹，或指定导出根目录
-  * 采集模式：auto / episodic / gapfree；可按通道拆分文件
-  * 后台执行批量转换，日志实时显示
+Features:
+  * Add a single .dat file or a whole folder (recursively finds *.dat)
+  * Output location: default (sibling folder with the same name) or custom root
+  * Acquisition mode: auto / episodic / gapfree; optional per-channel split
+  * Background batch conversion with a live-updating log
 """
 
 import os
@@ -25,47 +25,54 @@ from heka2abf.convert import convert_dat  # noqa: E402
 ABOUT_TEXT = """heka2abf  v0.2.0
 ==================
 
-HEKA .dat → ABF2 文件转换器
-  把 HEKA PatchMaster 电生理记录（.dat）转换成 Axon Binary Format 2
-  （ABF2），生成的 .abf 文件可直接用 Clampfit 打开分析。
+HEKA .dat -> ABF2 file converter
+  Convert HEKA PatchMaster electrophysiology recordings (.dat) into
+  Axon Binary Format 2 (.abf) files, directly readable by Clampfit.
 
-功能：多通道交织、mV / pA 单位换算、变长 sweep 自动补全、
-      episodic / gap-free 双模式、批量文件夹转换。
+Features: multi-channel interleaving, mV / pA unit normalization,
+          variable-sweep auto-padding, episodic / gap-free dual mode,
+          batch folder conversion.
 
-出品：WWT Lab（Wenting Wang's Lab）
-Wired， We Think · 星河为络，思接苍穹
+By: WWT Lab (Wenting Wang's Lab)
+Wired, We Think - connect the dots, touch the stars
 """
 
-HELP_TEXT = """heka2abf — HEKA .dat → ABF2 转换器
-==================================
+HELP_TEXT = """heka2abf - HEKA .dat -> ABF2 converter
+=================================
 
-使用方法
---------
-1) 添加文件：点“添加文件…”选单个 .dat，或点“添加文件夹…”选整个目录（自动递归找出所有 .dat）。
-2) 导出位置：
-   · “默认”：每个 .dat 的同级目录下自动生成“<文件名>”文件夹，结果放里面；
-   · “自定义根目录”：指定一个根目录，结果放 <根目录>/<文件名>/。
-3) 选好模式（见下）后点“导出”，日志区会显示进度；完成后可用 Clampfit 打开生成的 .abf。
+Usage
+-----
+1) Add files: click "Add File(s)..." to pick one or more .dat files,
+   or "Add Folder..." to pick a directory (recursively finds all .dat).
+2) Output location:
+   - "Default": a same-name folder is created next to each .dat, results go there;
+   - "Custom output root": pick a root directory; results go to <root>/<name>/.
+3) Pick a mode (see below) and click "Convert". The log area shows progress;
+   when done, open the generated .abf in Clampfit.
 
-采集模式
---------
-· auto（默认）：多 sweep 系列 → episodic；单 sweep 系列/连续记录 → gap-free；
-· episodic：全部按 episodic 处理；
-· gapfree：全部按 gap-free 处理（建议仅用于连续记录）。
+Acquisition mode
+----------------
+- auto (default): multi-sweep series -> episodic; single-sweep / continuous -> gap-free.
+- episodic: treat every series as episodic.
+- gapfree: treat every series as gap-free (recommended only for continuous recordings).
 
-说明
-----
-· 生成的 ABF2 用 int16 + 缩放系数存储，单位默认换算为 mV（电压）/ pA（电流）；
-· 同一 HEKA Series 的多通道会交织保存在一个文件里；勾选“每通道单独文件”
-  可拆分为每个 ADC 通道一个文件；
-· 变长 sweep（最后一个 sweep 提前结束）会自动补足到标准长度，保证 Clampfit 正常显示；
-· 数据文件保存在 <输出>/<dat文件名>/ 下，命名：<dat名>_g<组>_s<系列>_<系列名>.abf。
+Notes
+-----
+- The ABF2 is stored as int16 + per-channel scale factors; units are
+  normalized to mV (voltage) / pA (current) by default.
+- All ADC channels within one HEKA series are interleaved into a single
+  ABF file. Tick "One file per channel" to split into one file per ADC.
+- Variable-length sweeps (last sweep ends early) are auto-padded to the
+  standard length so Clampfit displays correctly.
+- Output layout: <out_dir>/<dat-stem>/<dat-stem>_g<G>_s<S>_<series-label>.abf.
 
-常见问题
---------
-· 导出时报“文件被占用”：请先关闭 Clampfit 中打开的 .abf 再重试；
-· 打不开/闪退：确保是用 run_gui.bat 启动（使用自带环境的 Python）;
-· 需要给同事使用：同事双击 install.bat 自动安装环境，再双击 run_gui.bat。
+FAQ
+---
+- "File is in use" error at export time: close the .abf in Clampfit and retry.
+- GUI won't open / quits immediately: launch via run_gui.bat (Windows) or
+  ./run_gui.sh (Linux / macOS) so the bundled venv Python is used.
+- Sharing with a colleague: have them double-click install.bat (Windows) or
+  run ./install.sh (Linux / macOS), then double-click run_gui.bat / ./run_gui.sh.
 """
 
 
@@ -83,9 +90,9 @@ def _fatal_errors_to_log(exc_info_log):
         root = tk.Tk()
         root.withdraw()
         messagebox.showerror(
-            "heka2abf 启动失败",
-            "程序启动时出错，请开启控制台运行查看详细错误，\n"
-            "或把 %s 的内容发给我们。" % log)
+            "heka2abf failed to start",
+            "An error occurred during startup. Please run from a console to "
+            "see the full traceback,\nor send us the contents of %s." % log)
         root.destroy()
     except Exception:
         pass
@@ -94,8 +101,8 @@ def _fatal_errors_to_log(exc_info_log):
 class GuiApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("heka2abf — HEKA .dat → ABF2 转换器")
-        self.geometry("780x560")
+        self.title("heka2abf - HEKA .dat -> ABF2 Converter")
+        self.geometry("880x580")
         self.files = []            # list of .dat paths
         self.log_q = queue.Queue()
         self._build()
@@ -105,77 +112,94 @@ class GuiApp(tk.Tk):
     def _build(self):
         pad = dict(padx=8, pady=4)
 
-        # 顶部栏：标题 + 右上角帮助/关于
+        # Top bar: title + Help/About on the right
         header = ttk.Frame(self)
         header.pack(fill="x", **pad)
-        ttk.Label(header, text="heka2abf", font=("Microsoft YaHei UI", 13, "bold")
+        ttk.Label(header, text="heka2abf",
+                  font=("Segoe UI", 13, "bold")
                   ).pack(side="left")
-        ttk.Label(header, text="HEKA .dat → ABF2 转换器",
+        ttk.Label(header, text="HEKA .dat -> ABF2 converter",
                   foreground="#555").pack(side="left", padx=10)
-        ttk.Button(header, text="关于", command=self._show_about).pack(side="right")
-        ttk.Button(header, text="使用说明", command=self._show_help).pack(side="right", padx=6)
+        ttk.Button(header, text="About", command=self._show_about).pack(side="right")
+        ttk.Button(header, text="Help", command=self._show_help).pack(side="right", padx=6)
 
-        # 输入
-        frm_in = ttk.LabelFrame(self, text="1. 输入：HEKA .dat 文件")
+        # Input
+        frm_in = ttk.LabelFrame(self, text="1. Input: HEKA .dat files")
         frm_in.pack(fill="x", **pad)
         row1 = ttk.Frame(frm_in)
         row1.pack(fill="x", padx=6, pady=4)
-        ttk.Button(row1, text="添加文件…", command=self._pick_files).pack(side="left")
-        ttk.Button(row1, text="添加文件夹…", command=self._pick_folder).pack(side="left", padx=6)
-        ttk.Button(row1, text="清空列表", command=self._clear_files).pack(side="left")
-        ttk.Label(row1, text="（支持单个文件或整个文件夹，自动递归）").pack(side="left", padx=12)
+        ttk.Button(row1, text="Add File(s)...",
+                   command=self._pick_files).pack(side="left")
+        ttk.Button(row1, text="Add Folder...",
+                   command=self._pick_folder).pack(side="left", padx=6)
+        ttk.Button(row1, text="Clear list",
+                   command=self._clear_files).pack(side="left")
+        ttk.Label(row1,
+                  text="(single file or whole folder; recursive scan)"
+                  ).pack(side="left", padx=12)
         self.listbox = tk.Listbox(frm_in, height=6)
         self.listbox.pack(fill="x", padx=6, pady=(0, 6))
 
-        # 导出位置
-        frm_out = ttk.LabelFrame(self, text="2. 导出位置")
+        # Output location
+        frm_out = ttk.LabelFrame(self, text="2. Output location")
         frm_out.pack(fill="x", **pad)
         self.out_var = tk.StringVar(value="default")
-        ttk.Radiobutton(frm_out, text="默认：在每个 .dat 同级目录下新建同名文件夹",
-                        variable=self.out_var, value="default").pack(anchor="w", padx=6, pady=(4, 0))
-        ttk.Radiobutton(frm_out, text="自定义导出根目录：",
-                        variable=self.out_var, value="custom").pack(anchor="w", padx=6)
+        ttk.Radiobutton(
+            frm_out,
+            text="Default: create a same-name folder next to each .dat",
+            variable=self.out_var, value="default"
+        ).pack(anchor="w", padx=6, pady=(4, 0))
+        ttk.Radiobutton(
+            frm_out,
+            text="Custom output root directory:",
+            variable=self.out_var, value="custom"
+        ).pack(anchor="w", padx=6)
         row2 = ttk.Frame(frm_out)
         row2.pack(fill="x", padx=18, pady=(0, 6))
         self.out_entry = ttk.Entry(row2)
         self.out_entry.pack(side="left", fill="x", expand=True)
-        ttk.Button(row2, text="浏览…", command=self._pick_outdir).pack(side="left", padx=6)
+        ttk.Button(row2, text="Browse...",
+                   command=self._pick_outdir).pack(side="left", padx=6)
 
-        # 选项
-        frm_opt = ttk.LabelFrame(self, text="3. 选项")
+        # Options
+        frm_opt = ttk.LabelFrame(self, text="3. Options")
         frm_opt.pack(fill="x", **pad)
         row3 = ttk.Frame(frm_opt)
         row3.pack(fill="x", padx=6, pady=4)
-        ttk.Label(row3, text="采集模式:").pack(side="left")
+        ttk.Label(row3, text="Acquisition mode:").pack(side="left")
         self.mode_var = tk.StringVar(value="auto")
         ttk.Combobox(row3, textvariable=self.mode_var, state="readonly",
                      values=["auto", "episodic", "gapfree"],
                      width=10).pack(side="left", padx=6)
         self.split_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(row3, text="每通道单独文件（--one-file-per-channel）",
-                        variable=self.split_var).pack(side="left", padx=12)
+        ttk.Checkbutton(
+            row3,
+            text="One file per channel (--one-file-per-channel)",
+            variable=self.split_var
+        ).pack(side="left", padx=12)
 
-        # 导出
+        # Run
         frm_go = ttk.Frame(self)
         frm_go.pack(fill="x", **pad)
-        self.go_btn = ttk.Button(frm_go, text="导出", command=self._run)
+        self.go_btn = ttk.Button(frm_go, text="Convert", command=self._run)
         self.go_btn.pack(side="left")
 
-        # 日志
-        frm_log = ttk.LabelFrame(self, text="日志")
+        # Log
+        frm_log = ttk.LabelFrame(self, text="Log")
         frm_log.pack(fill="both", expand=True, **pad)
         self.log = scrolledtext.ScrolledText(frm_log, height=12, state="disabled")
         self.log.pack(fill="both", expand=True, padx=6, pady=6)
 
-    # ---------- 输入 ----------
+    # ---------- Input ----------
     def _pick_files(self):
         paths = filedialog.askopenfilenames(
-            title="选择 HEKA .dat 文件",
-            filetypes=[("HEKA data", "*.dat"), ("所有文件", "*.*")])
+            title="Select HEKA .dat files",
+            filetypes=[("HEKA data", "*.dat"), ("All files", "*.*")])
         self._add_paths(paths)
 
     def _pick_folder(self):
-        folder = filedialog.askdirectory(title="选择包含 .dat 的文件夹")
+        folder = filedialog.askdirectory(
+            title="Select a folder containing .dat files")
         if not folder:
             return
         found = []
@@ -184,7 +208,8 @@ class GuiApp(tk.Tk):
                 if f.lower().endswith(".dat"):
                     found.append(os.path.join(root, f))
         if not found:
-            messagebox.showwarning("提示", "该文件夹下没有找到 .dat 文件")
+            messagebox.showwarning(
+                "Notice", "No .dat files found in this folder.")
             return
         self._add_paths(found)
 
@@ -205,20 +230,22 @@ class GuiApp(tk.Tk):
             self.listbox.insert("end", p)
 
     def _pick_outdir(self):
-        d = filedialog.askdirectory(title="选择导出根目录")
+        d = filedialog.askdirectory(title="Select output root directory")
         if d:
             self.out_entry.delete(0, "end")
             self.out_entry.insert(0, d)
 
-    # ---------- 执行 ----------
+    # ---------- Run ----------
     def _run(self):
         if not self.files:
-            messagebox.showwarning("提示", "请先添加 .dat 文件")
+            messagebox.showwarning(
+                "Notice", "Please add .dat files first.")
             return
         custom = self.out_var.get() == "custom"
         out_root = self.out_entry.get().strip() if custom else None
         if custom and not out_root:
-            messagebox.showwarning("提示", "请选择自定义导出根目录")
+            messagebox.showwarning(
+                "Notice", "Please select a custom output root directory.")
             return
         self.go_btn.state(["disabled"])
         t = threading.Thread(target=self._worker, args=(list(self.files),
@@ -230,13 +257,13 @@ class GuiApp(tk.Tk):
 
     def _worker(self, files, out_root, mode, split):
         total_abf = 0
-        self._log("=== 开始转换：%d 个 .dat 文件 ===\n" % len(files))
+        self._log("=== Starting conversion: %d .dat file(s) ===\n" % len(files))
         for i, dat in enumerate(files, 1):
             try:
                 if out_root:
                     out_dir = out_root
                 else:
-                    out_dir = os.path.dirname(dat)   # 默认：同级目录下建同名文件夹
+                    out_dir = os.path.dirname(dat)   # default: sibling folder
                 self._log("[%d/%d] %s\n" % (i, len(files), os.path.basename(dat)))
                 written = convert_dat(dat, out_dir=out_dir, mode=mode,
                                       one_file_per_channel=split,
@@ -245,13 +272,15 @@ class GuiApp(tk.Tk):
                 for w in written:
                     self._log("    -> %s\n" % w)
             except Exception as e:
-                self._log("    !! 转换失败：%s\n" % e)
-        self._log("=== 完成：共写入 %d 个 ABF2 文件 ===\n" % total_abf)
+                self._log("    !! conversion failed: %s\n" % e)
+        self._log("=== Done: %d ABF2 file(s) written ===\n" % total_abf)
         self.after(0, self._done)
 
     def _done(self):
         self.go_btn.state(["!disabled"])
-        messagebox.showinfo("完成", "转换完成，共写入 ABF2 文件。可用 Clampfit 打开查看。")
+        messagebox.showinfo(
+            "Done",
+            "Conversion complete. Open the generated .abf in Clampfit.")
 
     def _log(self, text):
         self.log_q.put(text)
@@ -270,7 +299,7 @@ class GuiApp(tk.Tk):
 
     def _show_help(self):
         top = tk.Toplevel(self)
-        top.title("帮助 / 使用说明")
+        top.title("Help / Usage")
         top.geometry("640x560")
         txt = scrolledtext.ScrolledText(top, wrap="word")
         txt.pack(fill="both", expand=True, padx=8, pady=8)
@@ -278,7 +307,7 @@ class GuiApp(tk.Tk):
         txt.configure(state="disabled")
 
     def _show_about(self):
-        messagebox.showinfo("关于 heka2abf", ABOUT_TEXT)
+        messagebox.showinfo("About heka2abf", ABOUT_TEXT)
 
 
 def _check_deps():
@@ -296,9 +325,12 @@ def _check_deps():
         root = tk.Tk()
         root.withdraw()
         messagebox.showerror(
-            "缺少运行依赖",
-            "缺少：%s\n\n请在软件目录运行 install.bat 自动安装环境，\n"
-            "或确认使用的是软件自带环境的 run_gui.bat 启动。" % ", ".join(missing))
+            "Missing runtime dependency",
+            "Missing: %s\n\n"
+            "Please run install.bat (Windows) or ./install.sh "
+            "(Linux / macOS) in the project folder to set up the environment, "
+            "or make sure you launch via run_gui.bat / ./run_gui.sh." %
+            ", ".join(missing))
         root.destroy()
         return False
     return True
