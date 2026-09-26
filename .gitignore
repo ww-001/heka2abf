@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# 运行时生成物（转换结果 / 测试产物 / 错误日志）
+output/
+tests/vout/
+tests/*.abf
+gui_error.log
+
+# IDE
+.idea/
+.vscode/
+*.iml
