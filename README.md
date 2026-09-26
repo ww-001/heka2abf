@@ -9,6 +9,8 @@
 
 **Latest stable:** v0.2.0 · **First release:** v0.2.0 · **Platform:** Windows 10/11 (primary) · macOS / Linux (CLI) · **Stack:** Python 3.9+ + numpy + pyabf (tests) + tkinter
 
+![heka2abf GUI screenshot](docs/screenshot.png)
+
 A Python tool (CLI + tkinter GUI) that converts HEKA PatchMaster `.dat` files
 to **ABF2** (Axon Binary Format 2), the format readable by Molecular Devices
 Clampfit and the [swharden/pyABF](https://github.com/swharden/pyABF) library.
