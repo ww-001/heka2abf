@@ -32,7 +32,7 @@ HEKA .dat → ABF2 文件转换器
 功能：多通道交织、mV / pA 单位换算、变长 sweep 自动补全、
       episodic / gap-free 双模式、批量文件夹转换。
 
-出品：WWT Lab
+出品：WWT Lab（Wenting Wang's Lab）
 Wired， We Think · 星河为络，思接苍穹
 """
 

@@ -1,7 +1,9 @@
 # heka2abf
 
-把 HEKA PatchMaster 的 `.dat` 文件转换为 **ABF2**（Axon Binary Format 2）文件的
-Python 命令行工具，转换结果可由 Clampfit / pyABF 直接打开。
+> 把 HEKA PatchMaster 的 `.dat` 文件转换为 **ABF2**（Axon Binary Format 2）文件的
+> Python 工具（命令行 + 图形界面），转换结果可由 Clampfit / pyABF 直接打开。
+
+**Latest:** v0.2.0 · **License:** MIT · **Platform:** Windows 10/11 (primary) · Python 3.9+ · **Stack:** Python + numpy + pyabf + tkinter
 
 ## 特性
 
