@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "heka2abf"
+version = "0.2.0"
+description = "Convert HEKA PatchMaster .dat files to ABF2 (Axon Binary Format 2), readable by Clampfit."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "Wenting Wang", email = "wwt0657@fmmu.edu.cn" },
+]
+keywords = [
+    "heka", "patchmaster", "abf", "abf2", "clampfit", "patch-clamp",
+    "electrophysiology", "neuroscience", "data-conversion",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+dependencies = [
+    "numpy>=1.20",
+]
+
+[project.optional-dependencies]
+test = ["pyabf>=2.3"]
+dev = [
+    "pyabf>=2.3",
+    "pytest>=7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ww-001/heka2abf"
+"Bug Reports" = "https://github.com/ww-001/heka2abf/issues"
+Source = "https://github.com/ww-001/heka2abf"
+
+[project.scripts]
+heka2abf = "heka2abf.cli:main"
+heka2abf-gui = "heka2abf.gui:main"
+
+[tool.setuptools]
+packages = ["heka2abf"]
+
+[tool.setuptools.package-data]
+heka2abf = ["py.typed"]
+
+# third_party/heka_reader.py is a vendored single-file module with no PyPI
+# release (https://github.com/campagnola/heka_reader). We intentionally do
+# NOT declare it as a dependency; instead install.bat / install.sh copies it
+# into the active environment's site-packages. This keeps the package
+# installable on PyPI without dragging in an unlicensed third-party module.
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+# tests/test_real_dat.py needs REAL HEKA .dat files at a hard-coded path.
+# Skip it by default on CI; run it locally with:
+#   pytest tests/ -k "not real_dat"
+addopts = "-ra --strict-markers"
+markers = [
+    "real_dat: requires real HEKA .dat files (skipped by default in CI)",
+]
