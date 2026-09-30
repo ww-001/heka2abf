@@ -51,8 +51,8 @@ heka2abf/
 plus `numpy` and `heka_reader`. No system Python is required.
 
 ### Q: Which Windows versions are supported?
-**A: Windows 10 / 11** (primary). The bundled Python is `python-3.12.x` from
-python.org (64-bit). The bundle was built on Windows 10 64-bit.
+**A: Windows 10 / 11** (primary). The bundled Python is from python.org
+(64-bit). The bundle was built on Windows 10 64-bit.
 
 ### Q: Can I move the folder after unzipping?
 **A: Yes.** The `.venv/` is fully self-contained, no absolute paths, no
