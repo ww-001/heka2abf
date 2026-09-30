@@ -7,7 +7,7 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/ww-001/heka2abf/test.yml?branch=main&label=tests)](../../actions/workflows/test.yml)
 [![GitHub release](https://img.shields.io/github/v/release/ww-001/heka2abf)](../../releases)
 
-**Latest stable:** v0.2.0 · **First release:** v0.2.0 · **Platform:** Windows 10/11 (primary) · macOS / Linux (CLI) · **Stack:** Python 3.9+ + numpy + pyabf (tests) + tkinter
+**Latest stable:** v0.2.1 · **First release:** v0.2.0 · **Platform:** Windows 10/11 (primary) · macOS / Linux (CLI) · **Stack:** Python 3.9+ + numpy + pyabf (tests) + tkinter
 
 ![heka2abf GUI screenshot](docs/screenshot.png)
 
@@ -187,7 +187,7 @@ If you use heka2abf in your research, please cite:
 @software{heka2abf,
   author       = {Wang, Wenting},
   title        = {heka2abf: HEKA PatchMaster .dat to ABF2 file converter},
-  version      = {0.2.0},
+  version      = {0.2.1},
   year         = {2026},
   url          = {https://github.com/ww-001/heka2abf},
   note         = {Self-contained ABF2 writer (int16 + per-channel scale), multi-channel interleaved, episodic/gap-free auto mode, variable-length sweep handling via SIC.}
@@ -346,7 +346,7 @@ pytest tests/test_real_dat.py -v -m real_dat -- path/to/your.dat [path/to/...]
 @software{heka2abf,
   author       = {Wang, Wenting},
   title        = {heka2abf: HEKA PatchMaster .dat 到 ABF2 文件转换器},
-  version      = {0.2.0},
+  version      = {0.2.1},
   year         = {2026},
   url          = {https://github.com/ww-001/heka2abf},
   note         = {自研 ABF2 写入器（int16 + 每通道缩放），多通道交织，episodic/gap-free 自动模式，变长 sweep 通过 SIC 同步数组处理'}

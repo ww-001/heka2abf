@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "heka2abf"
-version = "0.2.0"
+version = "0.2.1"
 description = "Convert HEKA PatchMaster .dat files to ABF2 (Axon Binary Format 2), readable by Clampfit."
 readme = "README.md"
 requires-python = ">=3.9"

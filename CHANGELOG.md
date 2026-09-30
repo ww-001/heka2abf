@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-09-30
+
+### Fixed
+- **`install.bat` 在中文 Windows 上会输出乱码。** 该文件含 23 个中文字符
+  （`echo [1/4] 创建 Python 虚拟环境...`）却存为 UTF-8 **无 BOM**，CMD 会按
+  OEM/ANSI 代码页解码。现统一为 UTF-8 with BOM，并补上 `chcp 65001 >nul`。
+- **`install.bat` 用了 `py -3 -m venv .venv 2>nul || python -m venv .venv`。**
+  Windows 自带的 "应用执行别名" 里 `python.exe` 是 Microsoft Store 的占位
+  stub，它的提示写在 **stdout**，`2>nul` 屏蔽不掉；而 venv 根本没建成这件
+  事本身不会暴露，同事只会看到后续一串"找不到指定的路径"。已移除该写法。
+- `make_windows_bundle.bat` 补 BOM，行尾由 LF 改为 CRLF。
+- `run_gui.bat` / `run_gui_console.bat` 补 `chcp 65001 >nul`（此前已有 BOM）。
+
+### Added
+- `.gitattributes`：`*.bat` / `*.cmd` 设 `text eol=crlf`，仓库内存 LF、
+  检出时转 CRLF。此前 CRLF 完全靠每个文件手动维护，必然会漏。
+- 提交 PyInstaller 构建链（`build/make_exe.bat`、`build/make_exe.ps1`
+  与两个 `.spec`）。此前它们从未入库，从 GitHub 新克隆一份重建不出 exe。
+- `COLLEAGUE_QUICKSTART.md`：同事三步上手指南。
+- `win-dist` skill（本地开发工具，非分发内容）。
+
+### Changed
+- `.gitignore` 忽略 `build/heka2abf-gui*/`、`dist/`、`*.zip`、`*.exe`，
+  共约 153 MB 构建产物此前完全未被忽略，一次 `git add -A` 就会误提交。
+  按精确路径忽略而非整个 `build/`，以保留手写构建脚本与 spec。
+
 ## [0.2.0] - 2026-09-26
 
 ### Added
@@ -50,4 +76,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   license file. `install.bat` / `install.sh` copy it into the active
   environment's `site-packages`.
 
+[0.2.1]: https://github.com/ww-001/heka2abf/releases/tag/v0.2.1
 [0.2.0]: https://github.com/ww-001/heka2abf/releases/tag/v0.2.0

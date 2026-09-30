@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from heka2abf.convert import convert_dat  # noqa: E402
 
-ABOUT_TEXT = """heka2abf  v0.2.0
+ABOUT_TEXT = """heka2abf  v0.2.1
 ==================
 
 HEKA .dat -> ABF2 file converter

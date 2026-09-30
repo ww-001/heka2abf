@@ -1,4 +1,4 @@
-﻿# heka2abf 快速上手（给同事）
+# heka2abf 快速上手（给同事）
 
 > 这是 WWT 实验室的电生理数据转换工具。**只做一件事**：把 HEKA PatchMaster 录的 `.dat` 文件转成 Clampfit 能读的 `.abf` 文件。**不需要你装任何环境**。
 
@@ -6,7 +6,7 @@
 
 ## 🚀 三步上手
 
-**1. 解压** `heka2abf_windows_v0.2.0.zip` 到任意目录
+**1. 解压** `heka2abf_windows_v0.2.1.zip` 到任意目录
    - 例：`D:\tools\heka2abf\`
    - ⚠️ **路径里别带中文**（Windows 上偶尔抽风）
 
