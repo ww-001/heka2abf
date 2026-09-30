@@ -10,6 +10,19 @@ tests/vout/
 tests/*.abf
 gui_error.log
 
+# 构建产物（PyInstaller 输出，可用 build\make_exe.ps1 随时重建）
+# 注意：build\make_exe.bat、build\make_exe.ps1、build\*.spec 是手写源文件，
+#       不能忽略 —— make_exe.ps1 把 spec 当输入传给 PyInstaller。
+build/heka2abf-gui/
+build/heka2abf-gui-onedir/
+build/*.log
+build/exe-toc.txt
+build/extracted_install.bat
+dist/
+dist-bundle-stage/
+*.zip
+*.exe
+
 # IDE
 .idea/
 .vscode/
