@@ -1,4 +1,5 @@
-@echo off
+﻿@echo off
+chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
 echo [1/4] 创建 Python 虚拟环境...

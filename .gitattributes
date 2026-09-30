@@ -1,0 +1,6 @@
+# CMD 对行尾敏感：.bat / .cmd 必须以 CRLF 检出。
+# 没有这条规则时，CRLF 完全靠每个文件手动维护，必然会漏
+# （win-dist skill 实测：make_windows_bundle.bat 就曾漏成 LF-only）。
+# 仓库内统一存 LF，检出时转成 CRLF。
+*.bat text eol=crlf
+*.cmd text eol=crlf

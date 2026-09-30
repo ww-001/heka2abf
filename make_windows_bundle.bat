@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 REM ============================================================
 REM Build a self-contained Windows distribution ZIP for heka2abf.
 REM
@@ -73,6 +73,7 @@ copy /y "%PROJECT_ROOT%\install.sh"             "%STAGE_HEKA%\install.sh"       
 copy /y "%PROJECT_ROOT%\run_gui.sh"             "%STAGE_HEKA%\run_gui.sh"             >nul || (echo ERROR: copy run_gui.sh & exit /b 1)
 copy /y "%PROJECT_ROOT%\make_windows_bundle.bat" "%STAGE_HEKA%\make_windows_bundle.bat" >nul || (echo ERROR: copy make_windows_bundle.bat & exit /b 1)
 copy /y "%PROJECT_ROOT%\WINDOWS_BUNDLE_README.md" "%STAGE_HEKA%\WINDOWS_BUNDLE_README.md" >nul || (echo ERROR: copy WINDOWS_BUNDLE_README.md & exit /b 1)
+if exist "%PROJECT_ROOT%\COLLEAGUE_QUICKSTART.md" copy /y "%PROJECT_ROOT%\COLLEAGUE_QUICKSTART.md" "%STAGE_HEKA%\COLLEAGUE_QUICKSTART.md" >nul || (echo ERROR: copy COLLEAGUE_QUICKSTART.md & exit /b 1)
 copy /y "%PROJECT_ROOT%\README.md"     "%STAGE_HEKA%\README.md"     >nul || (echo ERROR: copy README.md & exit /b 1)
 copy /y "%PROJECT_ROOT%\LICENSE"       "%STAGE_HEKA%\LICENSE"       >nul || (echo ERROR: copy LICENSE & exit /b 1)
 copy /y "%PROJECT_ROOT%\CHANGELOG.md"  "%STAGE_HEKA%\CHANGELOG.md"  >nul || (echo ERROR: copy CHANGELOG.md & exit /b 1)
